@@ -16,7 +16,7 @@ dependencies:
   flutter_animate: ^4.5.0
 
   # Audio
-  mic_stream: ^0.6.4
+  mic_stream: ^0.7.2
   audioplayers: ^5.2.1
   permission_handler: ^11.1.0
 
