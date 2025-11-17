@@ -1,3 +1,5 @@
+import 'dart:math';
+
 class Note {
   final String name;
   final double frequency;
@@ -71,6 +73,3 @@ class NoteHelper {
     return 1200 * log(frequency2 / frequency1) / log(2);
   }
 }
-
-// Import for pow and log functions
-import 'dart:math';
