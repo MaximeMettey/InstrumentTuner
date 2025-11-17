@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:mic_stream/mic_stream.dart';
-import 'package:fft/fft.dart';
 import '../models/note.dart';
 
 class PitchDetectionResult {
@@ -87,54 +86,11 @@ class PitchDetector {
     // Convert to doubles and normalize
     final doubles = samples.map((s) => s / 32768.0).toList();
 
-    // Apply Hamming window
-    final windowed = _applyHammingWindow(doubles);
+    // Use autocorrelation for pitch detection
+    final frequency = _detectPitchAutocorrelation(doubles);
 
-    // Perform FFT
-    final fft = FFT();
-    final freq = fft.Transform(windowed);
-
-    // Find the peak frequency
-    final magnitudes = <double>[];
-    for (int i = 0; i < freq.length ~/ 2; i++) {
-      final real = freq[i].real;
-      final imag = freq[i].imaginary;
-      magnitudes.add(sqrt(real * real + imag * imag));
-    }
-
-    // Find peak in the musical range (80 Hz - 1200 Hz)
-    const minFreq = 80.0;
-    const maxFreq = 1200.0;
-    final minBin = (minFreq * bufferSize / sampleRate).round();
-    final maxBin = (maxFreq * bufferSize / sampleRate).round();
-
-    double maxMagnitude = 0;
-    int peakBin = 0;
-
-    for (int i = minBin; i < maxBin && i < magnitudes.length; i++) {
-      if (magnitudes[i] > maxMagnitude) {
-        maxMagnitude = magnitudes[i];
-        peakBin = i;
-      }
-    }
-
-    // Calculate confidence based on peak magnitude
-    final avgMagnitude = magnitudes.reduce((a, b) => a + b) / magnitudes.length;
-    final confidence = min(1.0, maxMagnitude / (avgMagnitude * 10));
-
-    if (confidence < 0.1 || peakBin == 0) {
-      return null; // Not confident enough
-    }
-
-    // Parabolic interpolation for better frequency estimation
-    double frequency = peakBin * sampleRate / bufferSize;
-
-    if (peakBin > 0 && peakBin < magnitudes.length - 1) {
-      final alpha = magnitudes[peakBin - 1];
-      final beta = magnitudes[peakBin];
-      final gamma = magnitudes[peakBin + 1];
-      final p = 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);
-      frequency = (peakBin + p) * sampleRate / bufferSize;
+    if (frequency == null || frequency < 80 || frequency > 1200) {
+      return null; // Out of valid range
     }
 
     // Get the closest note
@@ -149,8 +105,57 @@ class PitchDetector {
       frequency: frequency,
       note: note,
       cents: cents,
-      confidence: confidence,
+      confidence: 0.8, // Fixed confidence for now
     );
+  }
+
+  // Autocorrelation-based pitch detection
+  double? _detectPitchAutocorrelation(List<double> samples) {
+    final n = samples.length;
+
+    // Calculate autocorrelation
+    final correlations = List<double>.filled(n ~/ 2, 0);
+
+    for (int lag = 0; lag < n ~/ 2; lag++) {
+      double correlation = 0;
+      for (int i = 0; i < n - lag; i++) {
+        correlation += samples[i] * samples[i + lag];
+      }
+      correlations[lag] = correlation;
+    }
+
+    // Find the first peak after the initial maximum
+    const minPeriod = sampleRate ~/ 1200; // Max frequency 1200 Hz
+    const maxPeriod = sampleRate ~/ 80;   // Min frequency 80 Hz
+
+    double maxCorr = correlations[0];
+    int period = 0;
+
+    // Find maximum in valid range
+    for (int i = minPeriod; i < maxPeriod && i < correlations.length; i++) {
+      if (correlations[i] > maxCorr * 0.5) { // Threshold
+        if (period == 0 || correlations[i] > correlations[period]) {
+          period = i;
+        }
+      }
+    }
+
+    if (period == 0) return null;
+
+    // Refine with parabolic interpolation
+    if (period > 0 && period < correlations.length - 1) {
+      final alpha = correlations[period - 1];
+      final beta = correlations[period];
+      final gamma = correlations[period + 1];
+
+      if (alpha != beta && gamma != beta) {
+        final delta = (alpha - gamma) / (2 * (alpha - 2 * beta + gamma));
+        final refinedPeriod = period + delta;
+        return sampleRate / refinedPeriod;
+      }
+    }
+
+    return sampleRate / period;
   }
 
   List<double> _applyHammingWindow(List<double> data) {

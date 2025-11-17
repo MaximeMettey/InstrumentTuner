@@ -19,7 +19,6 @@ dependencies:
   mic_stream: ^0.6.4
   audioplayers: ^5.2.1
   permission_handler: ^11.1.0
-  fft: ^2.0.0
 
   # State Management
   provider: ^6.1.1
