@@ -16,7 +16,7 @@ dependencies:
   flutter_animate: ^4.5.0
 
   # Audio
-  mic_stream: ^0.6.4
+  mic_stream: ^0.7.2
   audioplayers: ^5.2.1
   permission_handler: ^11.1.0
 
@@ -26,7 +26,7 @@ dependencies:
   # Internationalization
   flutter_localizations:
     sdk: flutter
-  intl: ^0.18.1
+  intl: ^0.20.2
 
   # Storage
   shared_preferences: ^2.2.2

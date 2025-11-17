@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/tuner_provider.dart';
 import '../models/instrument.dart';
 import '../models/tuning.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:instrument_tuner/generated/app_localizations.dart';
 
 class InstrumentsScreen extends StatelessWidget {
   const InstrumentsScreen({Key? key}) : super(key: key);
