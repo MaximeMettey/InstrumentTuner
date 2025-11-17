@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/tuner_provider.dart';
 import '../widgets/tuner_gauge.dart';
 import '../widgets/string_selector.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:instrument_tuner/generated/app_localizations.dart';
 
 class TunerScreen extends StatelessWidget {
   const TunerScreen({Key? key}) : super(key: key);
